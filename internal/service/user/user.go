@@ -3,6 +3,7 @@ package User
 import (
 	"errors"
 	"fmt"
+	"server/middleware"
 	"server/model"
 
 	"github.com/go-playground/validator/v10"
@@ -112,24 +113,48 @@ func Reg_service(db *gorm.DB, req model.UserReq, c *fiber.Ctx) bool {
 	return true
 }
 
-func Login_Service(db *gorm.DB, req model.UserReq, c *fiber.Ctx) bool {
+var SecretKey = middleware.SecretKey
 
+func Login_Service(db *gorm.DB, req model.UserReq, c *fiber.Ctx) bool {
 	var NewUser model.User
 
-	db.Where("name = ?", req.Name).First(&NewUser)
-
-	match := CheckPassword(req.Password, NewUser.Password)
-
-	if match {
-		c.Status(fiber.StatusOK).JSON(fiber.Map{
-			"message": "用户登陆成功",
-			"user": fiber.Map{
-				"id":    NewUser.ID,
-				"name":  NewUser.Name,
-				"email": NewUser.Email,
-			},
+	// 查找用户
+	result := db.Where("name = ?", req.Name).First(&NewUser)
+	if result.Error != nil {
+		c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "用户不存在",
 		})
+		return false
 	}
 
-	return match
+	// 校验密码
+	match := CheckPassword(req.Password, NewUser.Password)
+	if !match {
+		c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "密码错误",
+		})
+		return false
+	}
+
+	//密码正确，生成 JWT
+	token, err := middleware.GenerateJWT(NewUser.Name)
+	if err != nil {
+		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "生成 Token 失败",
+		})
+		return false
+	}
+
+	// 返回 Token 和用户信息
+	c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "用户登录成功",
+		"token":   token,
+		"user": fiber.Map{
+			"id":    NewUser.ID,
+			"name":  NewUser.Name,
+			"email": NewUser.Email,
+		},
+	})
+
+	return true
 }
