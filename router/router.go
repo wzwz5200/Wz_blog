@@ -11,6 +11,7 @@ func InitRouter(app *fiber.App) {
 	api := app.Group("/api")
 	User := api.Group("/user")
 
-	User.Get("reg", hander.User_reg)
+	User.Post("reg", hander.User_reg)
+	User.Post("login", hander.User_Login)
 
 }

@@ -111,3 +111,25 @@ func Reg_service(db *gorm.DB, req model.UserReq, c *fiber.Ctx) bool {
 	})
 	return true
 }
+
+func Login_Service(db *gorm.DB, req model.UserReq, c *fiber.Ctx) bool {
+
+	var NewUser model.User
+
+	db.Where("name = ?", req.Name).First(&NewUser)
+
+	match := CheckPassword(req.Password, NewUser.Password)
+
+	if match {
+		c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"message": "用户登陆成功",
+			"user": fiber.Map{
+				"id":    NewUser.ID,
+				"name":  NewUser.Name,
+				"email": NewUser.Email,
+			},
+		})
+	}
+
+	return match
+}
