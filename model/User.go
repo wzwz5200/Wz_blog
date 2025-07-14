@@ -37,3 +37,27 @@ type Post struct {
 	Author   User     `gorm:"foreignKey:AuthorID"`
 	Category Category `gorm:"foreignKey:CategoryID"`
 }
+
+// 仅公开安全字段的作者信息
+type AuthorDTO struct {
+	ID     uint   `json:"id"`
+	Name   string `json:"name"`
+	Avatar string `json:"avatar"`
+}
+
+// 仅公开安全字段的分类信息
+type CategoryDTO struct {
+	ID  uint   `json:"id"`
+	Tag string `json:"tag"`
+}
+
+// 文章 DTO，替代原始 Post
+type PostDTO struct {
+	ID        uint        `json:"id"`
+	Title     string      `json:"title"`
+	Content   string      `json:"content"`
+	Thumbnail string      `json:"thumbnail"`
+	Date      time.Time   `json:"date"`
+	Author    AuthorDTO   `json:"author"`
+	Category  CategoryDTO `json:"category"`
+}
